@@ -411,14 +411,9 @@ async function initAuth() {
           portalBtn.href = data.eportalUrl;
         }
         if (logoutBtn) {
-          logoutBtn.addEventListener('click', async () => {
-            try {
-              const outRes = await fetch('/api/auth/logout', { method: 'POST' });
-              const outData = await outRes.json().catch(() => ({}));
-              window.location.href = outData.redirect || data.eportalUrl || '/';
-            } catch {
-              window.location.href = data.eportalUrl || '/';
-            }
+          logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = '/logout';
           });
         }
         menu.hidden = false;

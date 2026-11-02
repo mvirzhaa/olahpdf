@@ -44,6 +44,22 @@ app.use(helmet({
 app.use('/vendor/pdfjs', express.static(pdfjsDir, { maxAge: '7d', index: false }));
 app.use(express.static(path.join(here, '../public'), { maxAge: '1h', index: false }));
 
+// Endpoint logout langsung yang membersihkan sesi dan mengalihkan ke E-Portal
+app.get('/logout', (req, res) => {
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  const cookieOptions = [
+    `${config.sso.cookieName}=`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Lax',
+    'Max-Age=0',
+    'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+  ];
+  if (isSecure) cookieOptions.push('Secure');
+  res.setHeader('Set-Cookie', cookieOptions.join('; '));
+  return res.redirect(config.sso.eportalUrl);
+});
+
 // Proteksi SSO UIKA E-Portal untuk seluruh API dan halaman
 app.use(ssoMiddleware);
 
