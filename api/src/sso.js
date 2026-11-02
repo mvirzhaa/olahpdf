@@ -46,28 +46,89 @@ export function verifySession(tokenString, secret) {
 }
 
 export async function introspectToken(token, appModuleId) {
-  const targetModuleId = appModuleId || config.sso.appModuleId;
-  const url = new URL(`${config.sso.baseUrl}/sso/introspect`);
-  if (targetModuleId) {
-    url.searchParams.set('appModule_id', targetModuleId);
+  let targetModuleId = appModuleId || config.sso.appModuleId;
+
+  // Ekstrak metadata dari token jika ada (iss = issuer endpoint, appModule_id = ID modul)
+  let tokenIss = null;
+  try {
+    const parts = (token || '').split('.');
+    if (parts.length >= 2) {
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+      if (payload.iss && typeof payload.iss === 'string') {
+        tokenIss = payload.iss;
+      }
+      if (!targetModuleId && payload.appModule_id) {
+        targetModuleId = payload.appModule_id;
+      }
+    }
+  } catch {}
+
+  // Susun daftar candidate URL untuk introspect
+  const candidates = [];
+
+  // 1. Ambil langsung dari claim iss di JWT (misal: "https://eportal.uika-bogor.ac.id/api/sso/redirect")
+  if (tokenIss) {
+    const apiBase = tokenIss.replace(/\/sso\/redirect\/?$/, '').replace(/\/+$/, '');
+    candidates.push(`${apiBase}/sso/introspect`);
   }
 
-  const res = await fetch(url.toString(), {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'X-SSO-Client-ID': config.sso.clientId,
-      'X-SSO-Client-Secret': config.sso.clientSecret,
-      Accept: 'application/json',
-    },
-  });
-
-  const body = await res.json().catch(() => null);
-  if (!res.ok) {
-    const msg = body?.message || `HTTP ${res.status}`;
-    throw new Error(`SSO introspect gagal: ${msg}`);
+  // 2. Dari konfigurasi SSO_BASE_URL
+  const base = (config.sso.baseUrl || '').replace(/\/+$/, '');
+  if (base) {
+    if (base.endsWith('/api') || base.includes('/api/')) {
+      candidates.push(`${base}/sso/introspect`);
+    } else {
+      candidates.push(`${base}/api/sso/introspect`);
+      candidates.push(`${base}/sso/introspect`);
+    }
   }
-  return body;
+
+  // 3. Fallback produksi resmi
+  candidates.push('https://eportal.uika-bogor.ac.id/api/sso/introspect');
+  candidates.push('http://eportal.uika-bogor.ac.id/api/sso/introspect');
+
+  const uniqueCandidates = [...new Set(candidates)];
+  let lastError = null;
+
+  for (const candidateBase of uniqueCandidates) {
+    try {
+      const url = new URL(candidateBase);
+      if (targetModuleId) {
+        url.searchParams.set('appModule_id', targetModuleId);
+      }
+
+      const res = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-SSO-Client-ID': config.sso.clientId,
+          'X-SSO-Client-Secret': config.sso.clientSecret,
+          Accept: 'application/json',
+        },
+      });
+
+      // Jika 404, coba candidate berikutnya
+      if (res.status === 404) {
+        lastError = new Error(`Endpoint tidak ditemukan (404) di ${url.origin}${url.pathname}`);
+        continue;
+      }
+
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        const msg = body?.message || `HTTP ${res.status}`;
+        throw new Error(`SSO introspect gagal: ${msg}`);
+      }
+      return body;
+    } catch (err) {
+      if (err.message && err.message.includes('404')) {
+        lastError = err;
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw lastError || new Error('SSO introspect gagal: endpoint tidak ditemukan (404)');
 }
 
 export function restrictedPageHtml(eportalUrl, errorDetail = null) {

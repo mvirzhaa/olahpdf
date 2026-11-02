@@ -15,8 +15,8 @@ export const config = {
   resultTtlMinutes: int(process.env.RESULT_TTL_MINUTES, 60),
   sso: {
     enabled: (process.env.SSO_ENABLED ?? 'true') === 'true' || process.env.SSO_ENABLED === '1',
-    baseUrl: (process.env.SSO_BASE_URL || 'http://eportal.uika-bogor.ac.id/eportal-api').replace(/\/+$/, ''),
-    eportalUrl: (process.env.EPORTAL_URL || 'http://eportal.uika-bogor.ac.id').replace(/\/+$/, ''),
+    baseUrl: (process.env.SSO_BASE_URL || 'https://eportal.uika-bogor.ac.id/api').replace(/\/+$/, ''),
+    eportalUrl: (process.env.EPORTAL_URL || 'https://eportal.uika-bogor.ac.id').replace(/\/+$/, ''),
     clientId: process.env.SSO_CLIENT_ID || '',
     clientSecret: process.env.SSO_CLIENT_SECRET || '',
     appModuleId: process.env.SSO_APP_MODULE_ID || '',

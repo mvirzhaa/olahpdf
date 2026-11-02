@@ -36,8 +36,8 @@ services:
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
       TRUST_PROXY: ${TRUST_PROXY:-loopback, uniquelocal}
       SSO_ENABLED: ${SSO_ENABLED:-1}
-      SSO_BASE_URL: ${SSO_BASE_URL:-http://eportal.uika-bogor.ac.id/eportal-api}
-      EPORTAL_URL: ${EPORTAL_URL:-http://eportal.uika-bogor.ac.id}
+      SSO_BASE_URL: ${SSO_BASE_URL:-https://eportal.uika-bogor.ac.id/api}
+      EPORTAL_URL: ${EPORTAL_URL:-https://eportal.uika-bogor.ac.id}
       SSO_CLIENT_ID: ${SSO_CLIENT_ID:-}
       SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET:-}
       SSO_APP_MODULE_ID: ${SSO_APP_MODULE_ID:-}
