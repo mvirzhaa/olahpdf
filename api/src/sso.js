@@ -66,26 +66,31 @@ export async function introspectToken(token, appModuleId) {
   // Susun daftar candidate URL untuk introspect
   const candidates = [];
 
-  // 1. Ambil langsung dari claim iss di JWT (misal: "https://eportal.uika-bogor.ac.id/api/sso/redirect")
-  if (tokenIss) {
-    const apiBase = tokenIss.replace(/\/sso\/redirect\/?$/, '').replace(/\/+$/, '');
-    candidates.push(`${apiBase}/sso/introspect`);
-  }
-
-  // 2. Dari konfigurasi SSO_BASE_URL
+  // 1. Dari konfigurasi SSO_BASE_URL (jika di-set khusus)
   const base = (config.sso.baseUrl || '').replace(/\/+$/, '');
   if (base) {
     if (base.endsWith('/api') || base.includes('/api/')) {
       candidates.push(`${base}/sso/introspect`);
     } else {
+      candidates.push(`${base}/eportal-api/api/sso/introspect`);
       candidates.push(`${base}/api/sso/introspect`);
       candidates.push(`${base}/sso/introspect`);
     }
   }
 
-  // 3. Fallback produksi resmi
+  // 2. Candidate endpoint E-Portal UIKA (dengan domain host map & IP internal)
+  candidates.push('https://eportal.uika-bogor.ac.id/eportal-api/api/sso/introspect');
+  candidates.push('http://eportal.uika-bogor.ac.id/eportal-api/api/sso/introspect');
   candidates.push('https://eportal.uika-bogor.ac.id/api/sso/introspect');
   candidates.push('http://eportal.uika-bogor.ac.id/api/sso/introspect');
+  candidates.push('http://172.16.18.141/eportal-api/api/sso/introspect');
+  candidates.push('http://172.16.18.141/api/sso/introspect');
+
+  // 3. Dari claim iss token jika ada
+  if (tokenIss) {
+    const apiBase = tokenIss.replace(/\/sso\/redirect\/?$/, '').replace(/\/+$/, '');
+    candidates.push(`${apiBase}/sso/introspect`);
+  }
 
   const uniqueCandidates = [...new Set(candidates)];
   let lastError = null;
@@ -103,6 +108,7 @@ export async function introspectToken(token, appModuleId) {
           Authorization: `Bearer ${token}`,
           'X-SSO-Client-ID': config.sso.clientId,
           'X-SSO-Client-Secret': config.sso.clientSecret,
+          Host: 'eportal.uika-bogor.ac.id',
           Accept: 'application/json',
         },
       });
@@ -120,15 +126,13 @@ export async function introspectToken(token, appModuleId) {
       }
       return body;
     } catch (err) {
-      if (err.message && err.message.includes('404')) {
-        lastError = err;
-        continue;
-      }
-      throw err;
+      console.warn(`[sso] introspect candidate ${candidateBase} gagal:`, err.message);
+      lastError = err;
+      continue;
     }
   }
 
-  throw lastError || new Error('SSO introspect gagal: endpoint tidak ditemukan (404)');
+  throw lastError || new Error('SSO introspect gagal: semua endpoint candidate tidak dapat dihubungi');
 }
 
 export function restrictedPageHtml(eportalUrl, errorDetail = null) {

@@ -36,13 +36,16 @@ services:
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
       TRUST_PROXY: ${TRUST_PROXY:-loopback, uniquelocal}
       SSO_ENABLED: ${SSO_ENABLED:-1}
-      SSO_BASE_URL: ${SSO_BASE_URL:-https://eportal.uika-bogor.ac.id/api}
+      SSO_BASE_URL: ${SSO_BASE_URL:-https://eportal.uika-bogor.ac.id/eportal-api/api}
       EPORTAL_URL: ${EPORTAL_URL:-https://eportal.uika-bogor.ac.id}
       SSO_CLIENT_ID: ${SSO_CLIENT_ID:-}
       SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET:-}
       SSO_APP_MODULE_ID: ${SSO_APP_MODULE_ID:-}
       SESSION_SECRET: ${SESSION_SECRET:-olahpdf-secret-key-change-in-production}
       SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-12}
+      NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-0}
+    extra_hosts:
+      - "${SSO_HOST_MAP:-eportal.uika-bogor.ac.id:172.16.18.141}"
     volumes:
       - files:/data
     ports:
@@ -54,6 +57,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    extra_hosts:
+      - "${SSO_HOST_MAP:-eportal.uika-bogor.ac.id:172.16.18.141}"
     environment:
       DATABASE_URL: postgresql://olahpdf:${POSTGRES_PASSWORD:-ganti-password-ini}@db:5432/olahpdf
       STORAGE_DIR: /data
