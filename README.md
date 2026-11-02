@@ -172,14 +172,15 @@ Format data yang dikirim editor didokumentasikan di `worker/olahpdf/edit.py`.
 
 Mengubah PDF menjadi buku digital HTML yang bisa dibuka di peramban mana pun, tanpa internet dan tanpa server.
 
-**Saat membuat** (di OlahPDF): judul, kualitas halaman (ringkas/standar/tinggi), sampul tebal untuk halaman pertama & terakhir, warna latar, suara kertas, dan **musik latar MP3** (opsional) beserta opsi putar otomatis, ulangi, dan volume. Hasil bisa berupa **satu file `.html`** (gambar & musik disematkan, mudah dibagikan lewat WhatsApp/email/LMS) atau **ZIP** (`index.html` + `halaman/` + `thumb/` + `audio/`) untuk diunggah ke hosting.
+**Saat membuat** (di OlahPDF): judul, kualitas halaman (ringkas/standar/tinggi), sampul tebal untuk halaman pertama & terakhir, warna latar, tulisan kredit di pojok kanan bawah (bawaan `powered by FFF`), suara kertas, dan **musik latar MP3** (opsional) beserta opsi putar otomatis, ulangi, dan volume. Hasil bisa berupa **satu file `.html`** (gambar & musik disematkan, mudah dibagikan lewat WhatsApp/email/LMS) atau **ZIP** (`index.html` + `halaman/` + `thumb/` + `audio/`) untuk diunggah ke hosting.
 
 **Saat dibaca** (file HTML hasil):
-- Halaman dibalik dengan efek kertas melengkung: klik/ketuk, seret sudut halaman, atau geser (swipe) di layar sentuh. Sampul berupa halaman tebal.
+- Halaman dibalik dengan efek kertas melengkung: klik/ketuk, seret sudut halaman, atau geser (swipe) di layar sentuh. Sampul berupa halaman tebal; buku yang masih tertutup ditampilkan di tengah, tebal tumpukan kertas di sisi kiri/kanan mengikuti posisi baca, dan garis tipis di atas layar menunjukkan progres.
+- Di layar sentuh, arah balik mengikuti **arah geseran** (geser ke kiri = maju, ke kanan = mundur), di mana pun jari mulai menyentuh. Geseran pendek yang ragu-ragu dibatalkan, ketuk tepi kiri halaman = mundur, ketuk bagian lain = maju.
 - Navigasi: tombol & panah keyboard, penggeser halaman dengan pratinjau, daftar halaman (thumbnail), dan **daftar isi** otomatis dari bookmark PDF.
 - **Penanda halaman**: klik pita di tepi atas halaman atau ikon pita di bilah bawah (tombol B). Daftar penanda ada di panel; tersimpan di peramban pembaca (localStorage) dan tetap ada walau file dibuat ulang dari PDF yang sama.
 - **Musik on/off** (tombol ♪ atau M), pilihan pembaca diingat. Peramban hanya mengizinkan suara setelah interaksi pertama, jadi musik "putar otomatis" mulai saat pembaca pertama kali menyentuh/klik halaman. Musik berhenti sendiri saat tab disembunyikan.
-- Suara balik kertas (disintesis Web Audio, tanpa file tambahan) yang bisa dimatikan, layar penuh, perbesar halaman, tautan langsung ke halaman (`#hal-12`), dan tawaran "lanjutkan dari halaman terakhir".
+- Suara balik kertas yang lembut (hembusan udara + gesekan tipis, disintesis di peramban tanpa file tambahan) yang bisa dimatikan, layar penuh, perbesar halaman, tautan langsung ke halaman (`#hal-12`), dan tawaran "lanjutkan dari halaman terakhir".
 - Responsif: dua halaman berdampingan di laptop/tablet mendatar, satu halaman di HP dan tablet tegak (dipilih otomatis berdasarkan ruang layar).
 
 Tombol **Buka flipbook** di halaman hasil membuka pratinjau dengan header `Content-Security-Policy: sandbox`, sehingga halaman itu berjalan terisolasi dari aplikasi.

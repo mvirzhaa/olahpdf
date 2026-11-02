@@ -130,6 +130,7 @@ export const TOOLS = [
         ] },
       { name: 'cover', label: 'Halaman pertama & terakhir sebagai sampul tebal', type: 'checkbox', default: true },
       { name: 'background', label: 'Warna latar', type: 'color', default: '#2f343c' },
+      { name: 'credit', label: 'Tulisan di pojok kanan bawah', type: 'text', default: 'powered by FFF', placeholder: 'powered by FFF', maxLength: 80 },
       { name: 'flipSound', label: 'Suara kertas saat halaman dibalik', type: 'checkbox', default: true },
       { name: 'musicAutoplay', label: 'Musik langsung menyala saat buku dibuka', type: 'checkbox', default: true, showIfUpload: 'music' },
       { name: 'musicLoop', label: 'Ulangi musik terus-menerus', type: 'checkbox', default: true, showIfUpload: 'music' },

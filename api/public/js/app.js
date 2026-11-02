@@ -145,7 +145,7 @@ function fieldHtml(f) {
     default:
       return `<div class="field" data-field="${f.name}"><label for="${id}">${escapeHtml(f.label)}</label>
         <input class="input" type="${f.type === 'password' ? 'password' : 'text'}" id="${id}" name="${f.name}" maxlength="${f.maxLength || 500}"
-        placeholder="${escapeHtml(f.placeholder || '')}" autocomplete="${f.type === 'password' ? 'off' : 'on'}"${req}></div>`;
+        placeholder="${escapeHtml(f.placeholder || '')}" value="${f.type === 'password' ? '' : escapeHtml(f.default ?? '')}" autocomplete="${f.type === 'password' ? 'off' : 'on'}"${req}></div>`;
   }
 }
 

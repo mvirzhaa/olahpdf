@@ -165,6 +165,7 @@ def pdf_to_flipbook(inputs: list[InputFile], opts: dict, out_dir: Path) -> Resul
         "outline": _outline(doc),
         "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "music": None,
+        "credit": str(opts.get("credit") or "powered by FFF").strip()[:80],
     }
     music_meta = None
     if music_bytes is not None:

@@ -62,7 +62,21 @@ button { font: inherit; color: inherit; }
 
 /* ── Panggung buku ────────────────────── */
 .stage { position: relative; min-height: 0; }
-#book { position: absolute; inset: 10px 76px 14px; }
+#book, #deco { position: absolute; inset: 10px 76px 14px; transition: transform .6s cubic-bezier(.3, .7, .2, 1); }
+#book { touch-action: none; z-index: 1; }
+#deco { pointer-events: none; z-index: 0; }
+/* tebal tumpukan kertas di sisi buku: kiri bertambah, kanan berkurang seiring membaca */
+.edge { position: absolute; display: none; border-radius: 2px;
+  background: repeating-linear-gradient(90deg, #fbfaf6 0 1px, #d8d3c8 1px 2px);
+  box-shadow: 0 10px 18px -10px rgba(0, 0, 0, .6); transition: left .35s, width .35s, top .35s, height .35s; }
+.edge.l { border-radius: 3px 0 0 3px; box-shadow: inset -2px 0 3px rgba(0, 0, 0, .12), 0 10px 18px -10px rgba(0, 0, 0, .6); }
+.edge.r { border-radius: 0 3px 3px 0; box-shadow: inset 2px 0 3px rgba(0, 0, 0, .12), 0 10px 18px -10px rgba(0, 0, 0, .6); }
+/* bayangan buku di atas meja */
+.ground { position: absolute; display: none; height: 46px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, .5), rgba(0, 0, 0, .18) 60%, rgba(0, 0, 0, 0));
+  filter: blur(6px); transition: left .35s, width .35s, top .35s; }
+.progress { position: fixed; left: 0; top: 0; height: 3px; width: 100%; z-index: 10; pointer-events: none; }
+.progress span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--ribbon-dark), var(--ribbon)); transition: width .45s ease; border-radius: 0 2px 2px 0; }
 #book .stf__wrapper { height: 100%; }
 .page { background: var(--paper); overflow: hidden; }
 .page img { width: 100%; height: 100%; display: block; object-fit: contain; pointer-events: none; user-select: none; -webkit-user-select: none; }
@@ -89,6 +103,7 @@ button { font: inherit; color: inherit; }
   background-image: linear-gradient(90deg, rgba(0, 0, 0, .18), rgba(255, 255, 255, .12) 45%, rgba(0, 0, 0, .12));
 }
 @media (hover: hover) { .page:hover .ribbon { opacity: .45; } .page .ribbon:hover { opacity: .8; } }
+@media (hover: none) { .page:not(.marked) .ribbon { pointer-events: none; } }  /* pita tak terlihat tidak boleh 'menelan' ketukan */
 .ribbon:focus-visible { opacity: .8; box-shadow: none; outline: 2px solid var(--ribbon); outline-offset: 3px; }
 .page.marked .ribbon, .page.marked:hover .ribbon { opacity: 1; }
 .page.marked .ribbon.drop { animation: drop .35s cubic-bezier(.3, 1.5, .5, 1); transform-origin: top; }
@@ -102,7 +117,19 @@ button { font: inherit; color: inherit; }
 .nav:disabled { opacity: 0; pointer-events: none; }
 
 /* ── Bilah bawah ──────────────────────── */
-.bar-wrap { display: flex; justify-content: center; padding: 6px 12px max(12px, env(safe-area-inset-bottom)); min-width: 0; }
+.bar-wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 12px;
+  padding: 6px max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); min-width: 0; }
+.bar-wrap .bar { grid-column: 2; }
+.credit { grid-column: 3; justify-self: end; align-self: end; margin-bottom: 9px; font-size: 12px; letter-spacing: .02em; color: var(--fg-2);
+  white-space: nowrap; user-select: none; opacity: .8; }
+.credit span { opacity: .8; }
+.credit strong { font-weight: 700; letter-spacing: .08em; color: var(--fg); }
+/* tidak cukup ruang di samping bilah → kredit turun ke bawah bilah, tetap di kanan */
+@media (max-width: 1000px) {
+  .bar-wrap { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 2px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .bar-wrap .bar { grid-column: 1; }
+  .credit { grid-column: 1; justify-self: end; margin: 0; font-size: 11px; }
+}
 .only-narrow { display: none; }
 .bar { display: flex; align-items: center; gap: 4px; padding: 5px 8px; border-radius: 999px; background: var(--chrome); border: 1px solid var(--chrome-line);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); max-width: 100%; }
@@ -173,12 +200,16 @@ html[data-tone="dark"] .ibtn.marked { color: #f0717d; }
 .pill button.primary { background: var(--ribbon); color: #fff; font-weight: 600; }
 .loader { position: fixed; inset: 0; display: grid; place-items: center; z-index: 50; background: var(--bg); transition: opacity .4s; text-align: center; }
 .loader.done { opacity: 0; pointer-events: none; }
-.loader h1 { font: 600 clamp(22px, 4vw, 32px)/1.2 var(--serif); margin: 0 0 14px; padding: 0 24px; }
+.loader h1 { font: 600 clamp(20px, 3.4vw, 28px)/1.25 var(--serif); margin: 0 0 14px; padding: 0 24px; }
+.loader .cover { display: block; margin: 0 auto 22px; height: min(42vh, 360px); width: auto; max-width: 70vw; background: var(--paper);
+  box-shadow: 0 24px 50px -18px rgba(0, 0, 0, .7), 0 2px 6px rgba(0, 0, 0, .2); border-radius: 2px 4px 4px 2px;
+  animation: lift 1.6s ease-in-out infinite alternate; }
+@keyframes lift { from { transform: translateY(0); } to { transform: translateY(-6px); } }
 .loader .bar-line { width: 180px; height: 3px; background: var(--chrome-line); border-radius: 3px; overflow: hidden; margin: 0 auto; }
 .loader .bar-line span { display: block; height: 100%; width: 0; background: var(--ribbon); transition: width .2s; }
 
 @media (max-width: 700px) {
-  #book { inset: 6px 10px 8px; }
+  #book, #deco { inset: 6px 14px 8px; }
   .nav { display: none; }
   .title { font-size: 16px; }
   .title small { display: none; }
@@ -201,18 +232,19 @@ html[data-tone="dark"] .ibtn.marked { color: #f0717d; }
   .title { font-size: 15px; }
   .ibtn { width: 34px; height: 34px; }
   .bar-wrap { padding-top: 2px; padding-bottom: max(4px, env(safe-area-inset-bottom)); }
-  #book { inset: 4px 64px 4px; }
+  #book, #deco { inset: 4px 64px 4px; }
   .nav { width: 42px; height: 42px; }
   .pill { bottom: 56px; }
 }
-@media (min-width: 1600px) { #book { inset: 18px 110px 22px; } .nav { width: 60px; height: 60px; } .nav.prev { left: 28px; } .nav.next { right: 28px; } }
+@media (min-width: 1600px) { #book, #deco { inset: 18px 110px 22px; } .nav { width: 60px; height: 60px; } .nav.prev { left: 28px; } .nav.next { right: 28px; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
 </style>
 </head>
 <body>
-<div class="loader" id="loader" role="status"><div><h1>__TITLE__</h1><div class="bar-line"><span></span></div></div></div>
+<div class="loader" id="loader" role="status"><div><img class="cover" id="loader-cover" alt="" hidden><h1>__TITLE__</h1><div class="bar-line"><span></span></div></div></div>
+<div class="progress" aria-hidden="true"><span id="progress"></span></div>
 
 <header class="top">
   <div class="title" id="title">__TITLE__ <small id="count"></small></div>
@@ -232,6 +264,7 @@ html[data-tone="dark"] .ibtn.marked { color: #f0717d; }
 </header>
 
 <main class="stage" id="stage">
+  <div id="deco" aria-hidden="true"><div class="ground" id="ground"></div><div class="edge l" id="edge-l"></div><div class="edge r" id="edge-r"></div></div>
   <div id="book"></div>
   <button class="nav prev" id="nav-prev" type="button" aria-label="Halaman sebelumnya"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
   <button class="nav next" id="nav-next" type="button" aria-label="Halaman berikutnya"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
@@ -252,6 +285,7 @@ html[data-tone="dark"] .ibtn.marked { color: #f0717d; }
     <button class="ibtn" id="btn-panel" type="button" title="Halaman, daftar isi & penanda" aria-label="Buka daftar halaman" aria-expanded="false" aria-controls="panel"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1"/></svg></button>
     <button class="ibtn only-wide" id="btn-zoom" type="button" title="Perbesar halaman" aria-label="Perbesar halaman"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5M11 8v6M8 11h6"/></svg></button>
   </nav>
+  <div class="credit" id="credit" hidden></div>
 </div>
 
 <div class="scrim" id="scrim"></div>
@@ -363,7 +397,10 @@ html[data-tone="dark"] .ibtn.marked { color: #f0717d; }
   }
   applyOrientation();
   pf.loadFromHTML(pageEls);
-  window.addEventListener('resize', function () { applyOrientation(); pf.update(); });
+  window.addEventListener('resize', function () {
+    applyOrientation(); pf.update();
+    requestAnimationFrame(layoutDeco);
+  });
 
   var current = start;
   function isPortrait() { return pf.getOrientation() === 'portrait'; }
@@ -392,9 +429,54 @@ html[data-tone="dark"] .ibtn.marked { color: #f0717d; }
     bm.setAttribute('aria-pressed', String(mk));
     bm.title = (mk ? 'Hapus penanda halaman ' : 'Tandai halaman ') + (v[0] + 1) + ' (B)';
     try { history.replaceState(null, '', '#hal-' + (v[0] + 1)); } catch (e) { /* sandbox */ }
+    $('#progress').style.width = ((v[v.length - 1] + 1) / N * 100) + '%';
     markThumbs();
     markToc();
+    layoutDeco();
   }
+
+  // ── Tampilan buku: posisi tengah saat tertutup, tebal kertas, bayangan ──
+  var deco = $('#deco'), edgeL = $('#edge-l'), edgeR = $('#edge-r'), ground = $('#ground');
+  function box(el, x, y, w, h) {
+    if (!(w > 0)) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.width = w + 'px'; el.style.height = h + 'px';
+  }
+  function layoutDeco() {
+    var r;
+    try { r = pf.getBoundsRect(); } catch (e) { return; }
+    if (!r || !r.pageWidth) return;
+    var v = visible(), port = isPortrait();
+    var x0 = r.left, x1 = r.left + r.width, shift = 0;
+    if (port) x0 = r.left + r.pageWidth;                       // hanya halaman kanan yang tampil
+    else if (v.length === 1) {
+      if (D.cover && v[0] === 0) { x0 = r.left + r.pageWidth; shift = -r.pageWidth / 2; }   // sampul depan → geser ke tengah
+      else { x1 = r.left + r.pageWidth; shift = r.pageWidth / 2; }                          // sampul belakang
+    }
+    var tf = shift ? 'translateX(' + shift + 'px)' : '';
+    bookEl.style.transform = tf; deco.style.transform = tf;
+    var thick = function (c) { return c > 0 ? Math.min(14, 2.5 + Math.sqrt(c) * 1.5) : 0; };
+    var before = v[0], after = N - 1 - v[v.length - 1];
+    var tl = port ? 0 : thick(before), tr = thick(after);
+    box(edgeL, x0 - tl, r.top + 3, tl, r.height - 6);
+    box(edgeR, x1, r.top + 3, tr, r.height - 6);
+    var gw = (x1 - x0) + tl + tr;
+    box(ground, x0 - tl + gw * 0.04, r.top + r.height - 26, gw * 0.92, 46);
+  }
+  pf.on('changeOrientation', function () { requestAnimationFrame(layoutDeco); });
+
+  // Kredit di pojok kanan bawah
+  (function () {
+    var c = (D.credit || '').trim(), el = $('#credit');
+    if (!c) return;
+    var m = /^(powered by|dibuat oleh|didukung oleh)\s+(.+)$/i.exec(c);
+    if (m) {
+      var a = document.createElement('span'); a.textContent = m[1] + ' ';
+      var b = document.createElement('strong'); b.textContent = m[2];
+      el.appendChild(a); el.appendChild(b);
+    } else el.textContent = c;
+    el.hidden = false;
+  })();
   pf.on('flip', function (e) { current = e.data; preload(current); refresh(); persist(); });
   pf.on('changeOrientation', function () { refresh(); });
   pf.on('changeState', function (e) {
@@ -412,6 +494,80 @@ html[data-tone="dark"] .ibtn.marked { color: #f0717d; }
   function prev() { pf.flipPrev(); }
   $('#btn-next').onclick = next; $('#nav-next').onclick = next;
   $('#btn-prev').onclick = prev; $('#nav-prev').onclick = prev;
+
+  // ── Sentuhan (HP/tablet) ──
+  // Bawaan library menentukan arah dari POSISI awal jari (40% kiri halaman = mundur), sehingga
+  // geseran pelan yang dimulai di sisi kiri malah membuka halaman sebelumnya. Di sini arah
+  // ditentukan dari ARAH geseran; library hanya dipakai untuk menggambar lengkungan kertas.
+  var blockEl = null, T = null;
+  function blockRect() { blockEl = blockEl || bookEl.querySelector('.stf__block'); return blockEl.getBoundingClientRect(); }
+  function canGo(dir) { var v = visible(); return dir > 0 ? v[v.length - 1] < N - 1 : v[0] > 0; }
+  window.addEventListener('touchstart', function (e) {
+    if (!bookEl.contains(e.target)) return;
+    e.stopPropagation();                                   // jangan sampai ke penangan sentuh bawaan
+    if (e.touches.length > 1) { T = null; return; }
+    var t = e.changedTouches[0];
+    T = { x0: t.clientX, y0: t.clientY, t0: Date.now(), dir: 0, fold: false,
+          btn: (e.target.closest && e.target.closest('button, a')) || null };
+  }, { capture: true, passive: true });
+  window.addEventListener('touchmove', function (e) {
+    if (!T) return;
+    e.stopPropagation();
+    var t = e.changedTouches[0], dx = t.clientX - T.x0, dy = t.clientY - T.y0;
+    if (!T.dir) {
+      if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.1) return;
+      var dir = dx < 0 ? 1 : -1;                           // geser ke kiri = maju, ke kanan = mundur
+      if (!canGo(dir) || pf.getState() !== 'read') { T.dir = 'x'; return; }
+      var r = pf.getBoundsRect(), b = blockRect();
+      var gx = isPortrait() ? (dir > 0 ? 2 * r.pageWidth - 1 : r.pageWidth + 1) : (dir > 0 ? r.width - 1 : 1);
+      var gy = (t.clientY - b.top - r.top) > r.height / 2 ? r.height - 1 : 1;
+      T.dir = dir; T.sx = dx; T.r = r;
+      T.grab = { x: r.left + gx, y: r.top + gy };          // pegang sudut halaman sesuai arah geser
+      preload(current);
+      pf.startUserTouch(T.grab);
+      T.fold = true;
+    }
+    if (T.fold) {
+      var lim = T.r.height * 0.22;
+      pf.userMove({
+        x: T.grab.x + (dx - T.sx) * 1.25 - T.dir * 12,
+        y: T.grab.y + Math.max(-lim, Math.min(lim, dy * 0.5))
+      }, true);
+    }
+  }, { capture: true, passive: true });
+  function endTouch(e) {
+    if (!T) return;
+    e.stopPropagation();
+    var st = T; T = null;
+    var t = e.changedTouches[0], dx = t.clientX - st.x0, dy = t.clientY - st.y0, dt = Math.max(1, Date.now() - st.t0);
+    var tap = Math.abs(dx) < 10 && Math.abs(dy) < 10;
+    if (e.cancelable) e.preventDefault();                  // cegah klik/mouse tiruan yang ikut membalik halaman
+    if (st.btn && tap) {                                   // ketukan pada pita penanda ditangani langsung
+      if (st.btn.classList.contains('ribbon')) toggleMark(+st.btn.getAttribute('data-p'));
+      else st.btn.click();
+      return;
+    }
+    if (st.fold) {
+      var r = st.r;
+      var done = e.type === 'touchend' && (Math.abs(dx) / dt > 0.25 || Math.abs(dx) > r.pageWidth * 0.18);
+      if (done) {                                          // geseran cukup jauh/cepat → tuntaskan
+        var spine = isPortrait() ? r.left + r.pageWidth : r.left + r.width / 2;
+        pf.userMove({ x: spine - st.dir * r.pageWidth * 0.2, y: st.grab.y }, true);
+      }
+      pf.userStop(st.grab);                                // selain itu halaman kembali ke tempatnya
+      return;
+    }
+    if (tap && e.type === 'touchend' && dt < 700 && pf.getState() === 'read') {
+      var r2 = pf.getBoundsRect(), b2 = blockRect();
+      var bx = t.clientX - b2.left - r2.left, by = t.clientY - b2.top - r2.top;
+      // ketuk: tepi kiri (25%) mundur, selebihnya maju; di tampilan 2 halaman: halaman kiri/kanan
+      var back = isPortrait() ? (bx - r2.pageWidth) < r2.pageWidth * 0.25 : bx < r2.width / 2;
+      var corner = by > r2.height / 2 ? 'bottom' : 'top';
+      if (back) pf.flipPrev(corner); else pf.flipNext(corner);
+    }
+  }
+  window.addEventListener('touchend', endTouch, { capture: true, passive: false });
+  window.addEventListener('touchcancel', endTouch, { capture: true, passive: false });
 
   // Penggeser halaman dengan pratinjau
   var peek = $('#peek');
@@ -656,42 +812,74 @@ html[data-tone="dark"] .ibtn.marked { color: #f0717d; }
     });
   }
 
-  // ── Suara kertas saat halaman dibalik (disintesis, tanpa file) ──
-  var sfxOn = !!D.flipSound && saved.sfx !== false, actx = null, sfxBuf = null;
+  // ── Suara kertas saat halaman dibalik ──
+  // Disintesis sekali (tanpa file): hembusan pink-noise yang naik pelan, diredam low-pass,
+  // dengan tekstur gesekan tipis dan ketukan lembut saat halaman rebah.
+  var sfxOn = !!D.flipSound && saved.sfx !== false, actx = null, sfxBuf = null, lastSfx = 0;
   var btnSfx = $('#btn-sfx');
   if (D.flipSound) {
     btnSfx.hidden = false;
     btnSfx.setAttribute('aria-pressed', String(sfxOn));
     btnSfx.onclick = function () { sfxOn = !sfxOn; btnSfx.setAttribute('aria-pressed', String(sfxOn)); persist(); };
   }
+  function synthFlip(sr) {
+    var dur = 0.52, n = Math.floor(sr * dur), out = new Float32Array(n), i;
+    var b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    var x1 = 0, x2 = 0, y1 = 0, y2 = 0, c0 = 0, c2 = 0, d1 = 0, d2 = 0;
+    var lp1 = 0, lp2 = 0, thump = 0, tick = 0, tickLp = 0;
+    var lpA = 1 - Math.exp(-2 * Math.PI * 3000 / sr);   // peredam desis (low-pass 2 tingkat)
+    var thA = 1 - Math.exp(-2 * Math.PI * 160 / sr);
+    var tkA = 1 - Math.exp(-2 * Math.PI * 1800 / sr);
+    for (i = 0; i < n; i++) {
+      var t = i / sr, w = Math.random() * 2 - 1;
+      // pink noise (Paul Kellet) — lebih "berudara", tidak mendesis seperti white noise
+      b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.96900 * b2 + w * 0.1538520;
+      b3 = 0.86650 * b3 + w * 0.3104856; b4 = 0.55000 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.0168980;
+      var pink = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11; b6 = w * 0.115926;
+      if (i % 32 === 0) { // band-pass naik pelan lalu turun: hembusan udara di bawah halaman
+        var f = t < 0.15 ? 400 + 1000 * (t / 0.15) : 1400 - 780 * Math.min(1, (t - 0.15) / 0.3);
+        var w0 = 2 * Math.PI * f / sr, al = Math.sin(w0) / (2 * 0.6), cs = Math.cos(w0), a0 = 1 + al;
+        c0 = al / a0; c2 = -al / a0; d1 = -2 * cs / a0; d2 = (1 - al) / a0;
+      }
+      var y = c0 * pink + c2 * x2 - d1 * y1 - d2 * y2; x2 = x1; x1 = pink; y2 = y1; y1 = y;
+      var env = t < 0.13 ? Math.pow(Math.sin(Math.PI / 2 * t / 0.13), 2) : Math.exp(-(t - 0.13) * 8);
+      if (t > dur - 0.08) env *= (dur - t) / 0.08;
+      var s = y * env * 2.4;
+      // tekstur gesekan kertas yang sangat tipis
+      if (Math.random() < 0.0012 * env) tick = (Math.random() * 2 - 1) * 0.5;
+      tickLp += tkA * (tick - tickLp); tick *= 0.8; s += tickLp * 0.6;
+      // ketukan lembut saat halaman rebah
+      var tt = t - 0.34;
+      if (tt > 0) { thump += thA * (w - thump); s += thump * Math.exp(-tt * 30) * 2.2 * Math.min(1, tt / 0.012); }
+      lp1 += lpA * (s - lp1); lp2 += lpA * (lp1 - lp2);
+      out[i] = lp2;
+    }
+    var peak = 0; for (i = 0; i < n; i++) peak = Math.max(peak, Math.abs(out[i]));
+    if (peak > 0) for (i = 0; i < n; i++) out[i] *= 0.5 / peak;
+    return out;
+  }
   function playSfx() {
     if (!sfxOn) return;
+    var now = Date.now();
+    if (now - lastSfx < 160) return;   // jangan menumpuk saat membalik cepat
+    lastSfx = now;
     try {
       if (!actx) {
         var AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
         actx = new AC();
-        var len = Math.floor(actx.sampleRate * 0.5);
-        sfxBuf = actx.createBuffer(1, len, actx.sampleRate);
-        var d = sfxBuf.getChannelData(0), last = 0;
-        for (var i = 0; i < len; i++) {
-          var t = i / len;
-          var env = t < 0.06 ? t / 0.06 : Math.pow(1 - (t - 0.06) / 0.94, 2.4);
-          var flutter = 0.7 + 0.3 * Math.sin(t * 90 + Math.sin(t * 13) * 3);
-          last = 0.6 * last + 0.4 * (Math.random() * 2 - 1);
-          d[i] = last * env * flutter;
-        }
+        var data = synthFlip(actx.sampleRate);
+        sfxBuf = actx.createBuffer(1, data.length, actx.sampleRate);
+        sfxBuf.getChannelData(0).set(data);
       }
       if (actx.state === 'suspended') actx.resume();
-      var now = actx.currentTime;
-      var src = actx.createBufferSource(); src.buffer = sfxBuf;
-      src.playbackRate.value = 0.9 + Math.random() * 0.2;
-      var bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.7;
-      bp.frequency.setValueAtTime(700, now); bp.frequency.exponentialRampToValueAtTime(3200, now + 0.32);
-      var hp = actx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 350;
-      var g = actx.createGain(); g.gain.value = 0.5;
-      src.connect(bp); bp.connect(hp); hp.connect(g); g.connect(actx.destination);
-      src.start(now);
+      var src = actx.createBufferSource();
+      src.buffer = sfxBuf;
+      src.playbackRate.value = 0.94 + Math.random() * 0.12;   // variasi kecil agar tidak monoton
+      var g = actx.createGain();
+      g.gain.value = 0.3 + Math.random() * 0.05;
+      src.connect(g); g.connect(actx.destination);
+      src.start();
     } catch (e) { /* audio tidak tersedia */ }
   }
 
@@ -752,6 +940,7 @@ html[data-tone="dark"] .ibtn.marked { color: #f0717d; }
   // ── Mulai ──
   setMarkUI(); renderMarks(); renderThumbMarks(); refresh();
   var loader = $('#loader'), bar = loader.querySelector('span');
+  if (D.thumbs && D.thumbs[0]) { var lc = $('#loader-cover'); lc.src = D.pages[0]; lc.hidden = false; }
   var first = visible().map(function (p) { ensure(p); return imgs[p]; });
   var loaded = 0;
   function oneDone() { loaded++; bar.style.width = (loaded / first.length * 100) + '%'; }
