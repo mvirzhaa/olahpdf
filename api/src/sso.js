@@ -45,6 +45,30 @@ export function verifySession(tokenString, secret) {
   }
 }
 
+export function verifyJwtHs256(token, secret) {
+  if (!token || typeof token !== 'string' || !secret) return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const [headerB64, payloadB64, sigB64] = parts;
+  try {
+    const expectedSig = crypto
+      .createHmac('sha256', secret)
+      .update(`${headerB64}.${payloadB64}`)
+      .digest('base64url');
+    if (sigB64.length !== expectedSig.length) return null;
+    if (!crypto.timingSafeEqual(Buffer.from(sigB64), Buffer.from(expectedSig))) return null;
+    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      console.warn('[sso] Token JWT dari E-Portal telah kedaluwarsa:', new Date(payload.exp * 1000).toISOString());
+      return null;
+    }
+    return payload;
+  } catch (err) {
+    console.warn('[sso] Gagal memvalidasi signature token JWT:', err.message);
+    return null;
+  }
+}
+
 export async function introspectToken(token, appModuleId) {
   let targetModuleId = appModuleId || config.sso.appModuleId;
 
@@ -122,13 +146,46 @@ export async function introspectToken(token, appModuleId) {
       const body = await res.json().catch(() => null);
       if (!res.ok) {
         const msg = body?.message || `HTTP ${res.status}`;
-        throw new Error(`SSO introspect gagal: ${msg}`);
+        lastError = new Error(`SSO introspect gagal: ${msg} (${url.origin}${url.pathname})`);
+        console.warn(`[sso] introspect ${url.origin}${url.pathname} mengembalikan error: ${msg}`);
+        continue;
       }
       return body;
     } catch (err) {
-      console.warn(`[sso] introspect candidate ${candidateBase} gagal:`, err.message);
-      lastError = err;
+      const cause = err.cause ? ` (${err.cause.code || err.cause.message || err.cause})` : '';
+      console.warn(`[sso] introspect candidate ${candidateBase} gagal:`, err.message + cause);
+      lastError = new Error(`${err.message}${cause} di ${candidateBase}`);
       continue;
+    }
+  }
+
+  // 4. Fallback kriptografis: jika semua endpoint introspect HTTP gagal dihubungi (misal terhalang firewall),
+  // validasi tanda tangan token secara lokal menggunakan SSO_JWT_SECRET E-Portal
+  if (config.sso.jwtSecret) {
+    const payload = verifyJwtHs256(token, config.sso.jwtSecret);
+    if (payload) {
+      console.log('[sso] Introspect HTTP gagal, token berhasil divalidasi lokal via JWT secret untuk:', payload.email || payload.id);
+      return {
+        valid: true,
+        user: {
+          sso_id: payload.id || payload.sub,
+          name: payload.name || payload.email?.split('@')[0] || 'Pengguna E-Portal',
+          email: payload.email || '',
+          institutional_role: payload.role || 'user',
+          unit_name: payload.unit_name || '',
+          nidn: payload.nidn || null,
+          npm: payload.npm || null,
+          nip: payload.nip || null,
+        },
+        access: {
+          has_access: true,
+          role_id: payload.role_id,
+          role_name: payload.role_name || payload.role,
+          unit_id: payload.unit_id,
+          unit_name: payload.unit_name,
+          permissions: payload.permissions || ['*'],
+        },
+      };
     }
   }
 

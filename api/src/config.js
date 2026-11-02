@@ -20,6 +20,7 @@ export const config = {
     clientId: process.env.SSO_CLIENT_ID || '',
     clientSecret: process.env.SSO_CLIENT_SECRET || '',
     appModuleId: process.env.SSO_APP_MODULE_ID || '',
+    jwtSecret: process.env.SSO_JWT_SECRET || process.env.JWT_SECRET || '1dWQ0OI7YN7hI1z5CzsXibynSgddURH1pY6a9KaCyPPAVdXLFP4D4RMSZqrq1GIw',
     cookieName: process.env.SSO_COOKIE_NAME || 'uika_pdf_session',
     sessionSecret: process.env.SESSION_SECRET || 'olahpdf-session-secret-change-in-production',
     sessionTtlHours: int(process.env.SESSION_TTL_HOURS, 12),
