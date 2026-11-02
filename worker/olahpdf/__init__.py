@@ -2,6 +2,7 @@
 from .convert import (html_to_pdf, jpg_to_pdf, office_to_pdf, pdf_to_excel, pdf_to_jpg, pdf_to_pdfa,
                       pdf_to_ppt, pdf_to_word)
 from .edit import edit_pdf
+from .flipbook import pdf_to_flipbook
 from .organize import compress_pdf, merge_pdf, split_pdf
 from .security import unlock_pdf, watermark_pdf
 from .unwatermark import remove_watermark
@@ -19,6 +20,7 @@ PROCESSORS = {
     "pdf-to-powerpoint": pdf_to_ppt,
     "pdf-to-excel": pdf_to_excel,
     "pdf-to-pdfa": pdf_to_pdfa,
+    "pdf-to-flipbook": pdf_to_flipbook,
     # atur
     "merge": merge_pdf,
     "split": split_pdf,

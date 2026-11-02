@@ -77,6 +77,8 @@ def make_samples(d: Path) -> None:
     wb.active.append(["Nama", "Nilai"])
     wb.active.append(["Andi", 90])
     wb.save(d / "uji.xlsx")
+    # MP3 senyap kecil (frame MPEG-1 Layer III 128 kbps) untuk uji flipbook
+    (d / "musik.mp3").write_bytes((b"\xff\xfb\x90\x64" + b"\x00" * 413) * 40)
     (d / "halaman.html").write_text(
         "<html><body style='font-family:sans-serif'><h1 style='color:#2563eb'>Halo OlahPDF</h1>"
         "<p>Konversi HTML ke PDF dengan Chromium.</p></body></html>", encoding="utf-8")
@@ -141,6 +143,8 @@ def cases(d: Path):
         ("unlock", [f(d, "terkunci.pdf")], {"password": "salah"}),  # harus gagal dengan pesan jelas
         ("remove-watermark", [f(d, "berwatermark.pdf")], {"text": "DRAFT"}),
         ("remove-watermark", [f(d, "contoh.pdf")], {}),  # tanpa watermark → pesan jelas
+        ("pdf-to-flipbook", [f(d, "contoh.pdf"), f(d, "musik.mp3", "music")], {"title": "Uji Flipbook", "musicVolume": 0.5}),
+        ("pdf-to-flipbook", [f(d, "contoh.pdf")], {"package": "zip", "quality": "compact", "cover": False}),
         ("edit", [f(d, "contoh.pdf"), f(d, "contoh2.pdf", "extra"), f(d, "logo.png", "assets")], {"edit": EDIT_SPEC}),
     ]
 

@@ -41,10 +41,12 @@ export const ICONS = {
   edit: svg('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>'),
   key: svg('<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/>'),
   watermark: svg('<path d="M12 3c3.5 4.5 6 7.8 6 11a6 6 0 0 1-12 0c0-3.2 2.5-6.5 6-11z"/>'),
+  book: svg('<path d="M12 6.5C10 5 7 4.5 3 5v13c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5z"/><path d="M12 6.5V19"/>'),
+  music: svg('<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'),
   unwatermark: svg('<path d="M12 3c3.5 4.5 6 7.8 6 11a6 6 0 0 1-12 0c0-3.2 2.5-6.5 6-11z"/><path d="M4 4l16 16"/>'),
 };
 
-const BADGE_ICON = { merge: 'merge', split: 'split', compress: 'compress', edit: 'edit', unlock: 'key', watermark: 'watermark', 'remove-watermark': 'unwatermark' };
+const BADGE_ICON = { merge: 'merge', split: 'split', compress: 'compress', edit: 'edit', unlock: 'key', watermark: 'watermark', 'remove-watermark': 'unwatermark', 'pdf-to-flipbook': 'book' };
 
 export function badge(tool, size = '') {
   const icon = BADGE_ICON[tool.id];
@@ -132,6 +134,7 @@ export function progressView(title) {
 }
 
 const RESULT_TITLE = {
+  'pdf-to-flipbook': 'Flipbook sudah jadi',
   merge: 'PDF sudah digabung', split: 'PDF sudah dipisah', compress: 'PDF sudah dikompres',
   watermark: 'Watermark sudah dibubuhkan', 'remove-watermark': 'Watermark sudah dihapus', unlock: 'PDF sudah tidak terkunci', edit: 'Perubahan sudah disimpan',
 };
@@ -145,15 +148,18 @@ export function resultView(tool, job, { onAgain, onDeleted } = {}) {
   const removed = tool.id === 'remove-watermark'
     ? `<p class="saved">${(info.removed_objects || 0) + (info.removed_text || 0)} elemen watermark dihapus.</p>` : '';
   const isPdf = job.output.name.toLowerCase().endsWith('.pdf');
+  const isHtml = job.output.name.toLowerCase().endsWith('.html');
+  const flip = tool.id === 'pdf-to-flipbook'
+    ? `<p class="saved">${info.pages} halaman${info.outline ? ` · daftar isi ${info.outline} bagian` : ''}${info.music ? ' · dengan musik latar' : ''}</p>` : '';
   const el = h(`<section class="panel result">
     <div class="stamp animate" aria-hidden="true">SELESAI<small>OlahPDF</small></div>
     <h2>${escapeHtml(RESULT_TITLE[tool.id] || 'File Anda sudah siap')}</h2>
     <p class="meta">${escapeHtml(job.output.name)} · ${formatBytes(job.output.size)}</p>
-    ${saved}${removed}
+    ${saved}${removed}${flip}
     <div class="result-actions">
       <a class="btn btn-primary btn-big" href="${job.output.url}" download>${ICONS.download} Unduh ${escapeHtml(job.output.name.split('.').pop().toUpperCase())}</a>
       <div class="row">
-        ${isPdf ? `<a class="btn" href="${job.output.url}?inline=1" target="_blank" rel="noopener">Lihat</a>` : ''}
+        ${isPdf || isHtml ? `<a class="btn" href="${job.output.url}?inline=1" target="_blank" rel="noopener">${isHtml ? 'Buka flipbook' : 'Lihat'}</a>` : ''}
         <button class="btn" type="button" data-again>Proses file lain</button>
       </div>
       <button class="btn btn-ghost btn-danger" type="button" data-del>${ICONS.trash} Hapus file dari server sekarang</button>

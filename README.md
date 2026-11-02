@@ -5,7 +5,7 @@ Aplikasi web pengolah PDF yang dipasang di server sendiri (self-hosted). File ti
 | Kelompok | Alat |
 |---|---|
 | Konversi ke PDF | JPG/PNG → PDF, Word → PDF, PowerPoint → PDF, Excel → PDF, HTML/URL → PDF |
-| Konversi dari PDF | PDF → JPG, PDF → Word, PDF → PowerPoint, PDF → Excel, PDF → PDF/A |
+| Konversi dari PDF | PDF → JPG, PDF → Word, PDF → PowerPoint, PDF → Excel, PDF → PDF/A, **PDF → Flipbook (HTML)** |
 | Atur PDF | Gabung (merge), Pisah (split), Kompres |
 | Edit & keamanan | Edit PDF, Watermark, Hapus watermark, Unlock |
 
@@ -33,6 +33,7 @@ Browser ──HTTP──▶ api (Node.js / Express)  ──INSERT job──▶ P
 | PDF → PDF/A | Ghostscript dengan OutputIntent sRGB |
 | Merge, split, kompres, watermark, edit, PDF → JPG/PPTX | PyMuPDF |
 | Unlock, hapus watermark | pikepdf (+ PyMuPDF untuk redaksi teks) |
+| PDF → Flipbook | PyMuPDF + Pillow (halaman WebP) + [StPageFlip](https://github.com/Nodlik/StPageFlip) (MIT, disertakan di `worker/olahpdf/assets/`) |
 
 ## Menjalankan dengan Docker (disarankan)
 
@@ -166,6 +167,22 @@ Seluruh pengeditan disusun di peramban dengan pdf.js, lalu diterapkan sekaligus 
 - Pintasan: V pilih, E edit teks, T teks, I gambar, R kotak, O elips, L garis, D coret, H stabilo, W tutup, Delete hapus objek, panah untuk menggeser.
 
 Format data yang dikirim editor didokumentasikan di `worker/olahpdf/edit.py`.
+
+## PDF ke Flipbook
+
+Mengubah PDF menjadi buku digital HTML yang bisa dibuka di peramban mana pun, tanpa internet dan tanpa server.
+
+**Saat membuat** (di OlahPDF): judul, kualitas halaman (ringkas/standar/tinggi), sampul tebal untuk halaman pertama & terakhir, warna latar, suara kertas, dan **musik latar MP3** (opsional) beserta opsi putar otomatis, ulangi, dan volume. Hasil bisa berupa **satu file `.html`** (gambar & musik disematkan, mudah dibagikan lewat WhatsApp/email/LMS) atau **ZIP** (`index.html` + `halaman/` + `thumb/` + `audio/`) untuk diunggah ke hosting.
+
+**Saat dibaca** (file HTML hasil):
+- Halaman dibalik dengan efek kertas melengkung: klik/ketuk, seret sudut halaman, atau geser (swipe) di layar sentuh. Sampul berupa halaman tebal.
+- Navigasi: tombol & panah keyboard, penggeser halaman dengan pratinjau, daftar halaman (thumbnail), dan **daftar isi** otomatis dari bookmark PDF.
+- **Penanda halaman**: klik pita di tepi atas halaman atau ikon pita di bilah bawah (tombol B). Daftar penanda ada di panel; tersimpan di peramban pembaca (localStorage) dan tetap ada walau file dibuat ulang dari PDF yang sama.
+- **Musik on/off** (tombol ♪ atau M), pilihan pembaca diingat. Peramban hanya mengizinkan suara setelah interaksi pertama, jadi musik "putar otomatis" mulai saat pembaca pertama kali menyentuh/klik halaman. Musik berhenti sendiri saat tab disembunyikan.
+- Suara balik kertas (disintesis Web Audio, tanpa file tambahan) yang bisa dimatikan, layar penuh, perbesar halaman, tautan langsung ke halaman (`#hal-12`), dan tawaran "lanjutkan dari halaman terakhir".
+- Responsif: dua halaman berdampingan di laptop/tablet mendatar, satu halaman di HP dan tablet tegak (dipilih otomatis berdasarkan ruang layar).
+
+Tombol **Buka flipbook** di halaman hasil membuka pratinjau dengan header `Content-Security-Policy: sandbox`, sehingga halaman itu berjalan terisolasi dari aplikasi.
 
 ## Hapus watermark
 

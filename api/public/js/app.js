@@ -10,11 +10,11 @@ const ACTION_LABEL = {
   'excel-to-pdf': 'Konversi ke PDF', 'html-to-pdf': 'Konversi ke PDF', 'pdf-to-jpg': 'Konversi ke JPG',
   'pdf-to-word': 'Konversi ke Word', 'pdf-to-powerpoint': 'Konversi ke PowerPoint', 'pdf-to-excel': 'Konversi ke Excel',
   'pdf-to-pdfa': 'Konversi ke PDF/A', merge: 'Gabungkan PDF', split: 'Pisahkan PDF', compress: 'Kompres PDF',
-  watermark: 'Bubuhkan watermark', 'remove-watermark': 'Hapus watermark', unlock: 'Buka kunci PDF',
+  watermark: 'Bubuhkan watermark', 'remove-watermark': 'Hapus watermark', 'pdf-to-flipbook': 'Buat flipbook', unlock: 'Buka kunci PDF',
 };
 const PROGRESS_TITLE = {
   merge: 'Menggabungkan PDF', split: 'Memisahkan PDF', compress: 'Mengompres PDF', watermark: 'Membubuhkan watermark',
-  unlock: 'Membuka kunci PDF', 'remove-watermark': 'Menghapus watermark',
+  unlock: 'Membuka kunci PDF', 'remove-watermark': 'Menghapus watermark', 'pdf-to-flipbook': 'Membuat flipbook',
 };
 
 const extOf = (name) => (name.match(/\.[^.]+$/)?.[0] || '').toLowerCase();
@@ -149,6 +149,14 @@ function fieldHtml(f) {
   }
 }
 
+function extraHtml(x) {
+  return `<div class="field" data-field="${x.field}"><span class="label">${escapeHtml(x.label)}</span>
+            <div class="extra-row"><button class="btn" type="button" data-extra="${x.field}">${ICONS.upload} ${escapeHtml(x.button || 'Pilih gambar')}</button>
+            <button class="icon-btn danger" type="button" data-extra-clear="${x.field}" aria-label="Hapus ${escapeHtml(x.label)}" hidden>${ICONS.x}</button></div>
+            ${x.kind === 'audio' ? '<audio class="extra-audio" controls preload="metadata" hidden></audio>' : ''}
+            ${x.maxMb ? `<span class="hint-sm">Maks. ${x.maxMb} MB</span>` : ''}</div>`;
+}
+
 function readOptions(form, tool) {
   const o = {};
   for (const f of tool.fields) {
@@ -201,9 +209,8 @@ async function renderTool(id) {
       <form class="panel options" novalidate>
         <h2>Pengaturan</h2>
         <div class="error-box" role="alert" hidden></div>
-        ${tool.fields.map(fieldHtml).join('')}
-        ${(tool.extraUploads || []).map((x) => `<div class="field" data-field="${x.field}"><span class="label">${escapeHtml(x.label)}</span>
-            <button class="btn" type="button" data-extra="${x.field}">${ICONS.upload} Pilih gambar</button></div>`).join('')}
+        ${tool.fields.map((f) => fieldHtml(f) + (tool.extraUploads || []).filter((x) => x.after === f.name).map(extraHtml).join('')).join('')}
+        ${(tool.extraUploads || []).filter((x) => !x.after).map(extraHtml).join('')}
         ${tool.note ? `<p class="note">${escapeHtml(tool.note)}</p>` : ''}
         <button class="btn btn-primary btn-big" type="submit">${escapeHtml(ACTION_LABEL[tool.id] || 'Proses')}</button>
       </form>
@@ -234,12 +241,40 @@ async function renderTool(id) {
     form.elements.position.value = e.target.checked ? 'tile' : (sel?.dataset.pos || 'mc');
     form.querySelector('.posgrid').style.opacity = e.target.checked ? '.35' : '1';
   });
+  // Opsi yang hanya relevan bila file tambahan (mis. MP3) sudah dipilih
+  const syncUploadDeps = () => {
+    for (const f of tool.fields) {
+      if (!f.showIfUpload) continue;
+      const node = form.querySelector(`[data-field="${f.name}"]`);
+      if (node) node.hidden = !extras[f.showIfUpload];
+    }
+  };
   form.querySelectorAll('[data-extra]').forEach((b) => b.addEventListener('click', async () => {
     const def = tool.extraUploads.find((x) => x.field === b.dataset.extra);
     const [f] = await pickFiles(def.accept, false);
-    if (f) { extras[def.field] = f; b.innerHTML = `${ICONS.image} ${escapeHtml(f.name)}`; }
+    if (!f) return;
+    if (!def.accept.includes(extOf(f.name))) { toast(`Gunakan file ${def.accept.join(', ')}`); return; }
+    if (def.maxMb && f.size > def.maxMb * 1024 * 1024) { toast(`Ukuran maksimal ${def.maxMb} MB.`); return; }
+    extras[def.field] = f;
+    b.innerHTML = `${def.kind === 'audio' ? ICONS.music : ICONS.image} ${escapeHtml(f.name)} · ${formatBytes(f.size)}`;
+    const wrap = b.closest('.field');
+    wrap.querySelector('[data-extra-clear]').hidden = false;
+    const au = wrap.querySelector('.extra-audio');
+    if (au) { if (au.src) URL.revokeObjectURL(au.src); au.src = URL.createObjectURL(f); au.hidden = false; }
+    syncUploadDeps();
+  }));
+  form.querySelectorAll('[data-extra-clear]').forEach((c) => c.addEventListener('click', () => {
+    const def = tool.extraUploads.find((x) => x.field === c.dataset.extraClear);
+    delete extras[def.field];
+    const wrap = c.closest('.field');
+    wrap.querySelector('[data-extra]').innerHTML = `${ICONS.upload} ${escapeHtml(def.button || 'Pilih gambar')}`;
+    c.hidden = true;
+    const au = wrap.querySelector('.extra-audio');
+    if (au) { au.pause(); if (au.src) URL.revokeObjectURL(au.src); au.removeAttribute('src'); au.hidden = true; }
+    syncUploadDeps();
   }));
   applyShowIf(form, tool);
+  syncUploadDeps();
 
   const thumbCache = new WeakMap();
   async function thumbFor(file, holder) {
@@ -388,7 +423,6 @@ async function route() {
   }
   window.scrollTo(0, 0);
 }
-
 async function initAuth() {
   try {
     const res = await fetch('/api/auth/me');

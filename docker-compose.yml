@@ -67,6 +67,8 @@ services:
       RESULT_TTL_MINUTES: ${RESULT_TTL_MINUTES:-60}
       HTML_URL_ENABLED: ${HTML_URL_ENABLED:-1}
       HTML_ALLOW_PRIVATE: ${HTML_ALLOW_PRIVATE:-0}
+      FLIPBOOK_MAX_PAGES: ${FLIPBOOK_MAX_PAGES:-400}
+      FLIPBOOK_MAX_MUSIC_MB: ${FLIPBOOK_MAX_MUSIC_MB:-30}
     volumes:
       - files:/data
     shm_size: 512mb   # Chromium untuk HTML → PDF

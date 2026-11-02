@@ -322,3 +322,8 @@ body.editing .foot { display: none; }
 .dz-inner .dz-title, .dropzone .dz-title { margin-bottom: 6px; }
 .ed-stage[data-tool=textEdit] .ed-layer { pointer-events: none; }
 .ed-stage .ed-obj.editing { pointer-events: auto; }
+
+.extra-row { display: flex; gap: 6px; align-items: center; }
+.extra-row .btn { flex: 1; min-width: 0; justify-content: flex-start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.extra-audio { width: 100%; height: 36px; margin-top: 4px; }
+.hint-sm { font-size: 13px; color: var(--ink-3); }

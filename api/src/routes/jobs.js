@@ -18,7 +18,7 @@ const uploadsRoot = path.join(config.storageDir, 'uploads');
 const outputsRoot = path.join(config.storageDir, 'outputs');
 
 const MIME = {
-  '.pdf': 'application/pdf', '.zip': 'application/zip', '.jpg': 'image/jpeg',
+  '.pdf': 'application/pdf', '.zip': 'application/zip', '.jpg': 'image/jpeg', '.html': 'text/html; charset=utf-8',
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -46,7 +46,9 @@ function fileFilter(req, file, cb) {
   const tool = req.tool;
   const ext = path.extname(fixName(file.originalname)).toLowerCase();
   let accept = tool.accept;
-  if (file.fieldname === 'watermark') accept = tool.extraUploads?.find((e) => e.field === 'watermark')?.accept ?? [];
+  const extraDef = tool.extraUploads?.find((e) => e.field === file.fieldname);
+  if (file.fieldname !== 'files' && extraDef) accept = extraDef.accept;
+  else if (file.fieldname === 'watermark' || file.fieldname === 'music') accept = [];
   if (file.fieldname === 'assets') accept = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'];
   if (file.fieldname === 'extra') accept = ['.pdf'];
   if (!accept.includes(ext)) {
@@ -80,6 +82,7 @@ function prepareJob(req, _res, next) {
 const uploadFields = (req, res, next) => upload.fields([
   { name: 'files', maxCount: req.tool.maxFiles || 1 },
   { name: 'watermark', maxCount: 1 },
+  { name: 'music', maxCount: 1 },
   { name: 'extra', maxCount: 10 },
   { name: 'assets', maxCount: 100 },
 ])(req, res, (err) => {
@@ -122,6 +125,8 @@ router.post('/jobs/:tool', createLimiter, prepareJob, uploadFields, async (req, 
       if (extra.required && extraUploadVisible(extra, options) && !(groups[extra.field]?.length)) {
         throw new ValidationError(`${extra.label} wajib diunggah.`);
       }
+      const big = (groups[extra.field] || []).find((f) => extra.maxMb && f.size > extra.maxMb * 1024 * 1024);
+      if (big) throw new ValidationError(`${extra.label}: ukuran maksimal ${extra.maxMb} MB.`);
     }
     if (tool.custom === 'editor') {
       if (!rawOptions.edit) throw new ValidationError('Data editor tidak ada.');
@@ -134,7 +139,8 @@ router.post('/jobs/:tool', createLimiter, prepareJob, uploadFields, async (req, 
 
     // Cek isi file sungguhan, bukan hanya ekstensi
     for (const f of all) {
-      const kind = f.fieldname === 'files' ? tool.kind : f.fieldname === 'extra' ? 'pdf' : 'image';
+      const kind = f.fieldname === 'files' ? tool.kind : f.fieldname === 'extra' ? 'pdf'
+        : (tool.extraUploads?.find((e) => e.field === f.fieldname)?.kind || 'image');
       if (!(await checkFileSignature(f.path, kind))) {
         throw new ValidationError(`File "${fixName(f.originalname)}" rusak atau isinya tidak sesuai ekstensinya.`);
       }
@@ -195,6 +201,16 @@ router.get('/jobs/:id/download', async (req, res) => {
   res.set('Content-Type', MIME[ext] || 'application/octet-stream');
   res.set('Cache-Control', 'private, no-store');
   res.set('X-Content-Type-Options', 'nosniff');
+  if (req.query.inline === '1' && ext === '.html') {
+    // Pratinjau flipbook: halaman dijalankan di origin terisolasi (sandbox) — tidak bisa menyentuh
+    // cookie/penyimpanan aplikasi ini, dan hanya boleh memuat sumber data:/blob: miliknya sendiri.
+    res.set('Content-Security-Policy', "sandbox allow-scripts allow-popups; default-src 'none'; "
+      + "script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; "
+      + "font-src data:; connect-src data: blob:");
+    res.set('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(j.output_name)}`);
+    res.removeHeader('Cross-Origin-Resource-Policy');
+    return res.sendFile(abs);
+  }
   const inline = req.query.inline === '1' && ext === '.pdf';
   if (inline) {
     res.set('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(j.output_name)}`);

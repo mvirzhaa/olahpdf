@@ -161,6 +161,13 @@ export async function checkFileSignature(filePath, kind) {
           || startsWith(buf, [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]); // DOC/XLS/PPT lama
       case 'html':
         return !buf.subarray(0, 512).includes(0);
+      case 'audio': { // MP3: tag ID3 atau sinkronisasi frame MPEG audio
+        if (buf.toString('latin1', 0, 3) === 'ID3') return true;
+        for (let i = 0; i < buf.length - 1; i += 1) {
+          if (buf[i] === 0xff && (buf[i + 1] & 0xe0) === 0xe0 && (buf[i + 1] & 0x06) !== 0) return true;
+        }
+        return false;
+      }
       default:
         return false;
     }

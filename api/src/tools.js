@@ -114,6 +114,33 @@ export const TOOLS = [
         options: [{ value: '1b', label: 'PDF/A-1b' }, { value: '2b', label: 'PDF/A-2b (disarankan)' }, { value: '3b', label: 'PDF/A-3b' }] },
     ],
   },
+  {
+    id: 'pdf-to-flipbook', category: 'from-pdf', title: 'PDF ke Flipbook', badge: 'book', hue: 'rose',
+    desc: 'Buku digital HTML dengan efek balik kertas, penanda halaman, dan musik latar.', accept: PDF, kind: 'pdf',
+    minFiles: 1, maxFiles: 1,
+    note: 'Hasilnya bisa dibuka di peramban mana pun tanpa internet. Musik baru berbunyi setelah pembaca menyentuh halaman (aturan peramban), dan pembaca bisa mematikannya kapan saja.',
+    extraUploads: [{ field: 'music', label: 'Musik latar MP3 (opsional)', button: 'Pilih MP3', accept: ['.mp3'], max: 1, kind: 'audio', maxMb: 30, after: 'flipSound' }],
+    fields: [
+      { name: 'title', label: 'Judul buku', type: 'text', placeholder: 'Kosongkan untuk memakai judul PDF', maxLength: 150 },
+      { name: 'quality', label: 'Kualitas halaman', type: 'select', default: 'standard',
+        options: [
+          { value: 'compact', label: 'Ringkas — file kecil' },
+          { value: 'standard', label: 'Standar — tajam di laptop' },
+          { value: 'high', label: 'Tinggi — tajam saat diperbesar' },
+        ] },
+      { name: 'cover', label: 'Halaman pertama & terakhir sebagai sampul tebal', type: 'checkbox', default: true },
+      { name: 'background', label: 'Warna latar', type: 'color', default: '#2f343c' },
+      { name: 'flipSound', label: 'Suara kertas saat halaman dibalik', type: 'checkbox', default: true },
+      { name: 'musicAutoplay', label: 'Musik langsung menyala saat buku dibuka', type: 'checkbox', default: true, showIfUpload: 'music' },
+      { name: 'musicLoop', label: 'Ulangi musik terus-menerus', type: 'checkbox', default: true, showIfUpload: 'music' },
+      { name: 'musicVolume', label: 'Volume musik', type: 'range', min: 0.05, max: 1, step: 0.05, default: 0.6, showIfUpload: 'music' },
+      { name: 'package', label: 'Bentuk hasil', type: 'select', default: 'single',
+        options: [
+          { value: 'single', label: 'Satu file HTML — mudah dibagikan' },
+          { value: 'zip', label: 'ZIP (HTML + folder gambar) — untuk diunggah ke website' },
+        ] },
+    ],
+  },
   // ── Atur ────────────────────────────────────────────────
   {
     id: 'merge', category: 'organize', title: 'Gabung PDF', badge: '+', hue: 'violet',
