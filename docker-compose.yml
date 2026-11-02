@@ -1,0 +1,72 @@
+name: olahpdf
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: olahpdf
+      POSTGRES_USER: olahpdf
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ganti-password-ini}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U olahpdf -d olahpdf"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://olahpdf:${POSTGRES_PASSWORD:-ganti-password-ini}@db:5432/olahpdf
+      STORAGE_DIR: /data
+      MAX_FILE_MB: ${MAX_FILE_MB:-100}
+      MAX_TOTAL_MB: ${MAX_TOTAL_MB:-300}
+      JOBS_PER_MINUTE: ${JOBS_PER_MINUTE:-30}
+      RESULT_TTL_MINUTES: ${RESULT_TTL_MINUTES:-60}
+      HTML_URL_ENABLED: ${HTML_URL_ENABLED:-1}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      TRUST_PROXY: ${TRUST_PROXY:-loopback, uniquelocal}
+      SSO_ENABLED: ${SSO_ENABLED:-1}
+      SSO_BASE_URL: ${SSO_BASE_URL:-http://eportal.uika-bogor.ac.id/eportal-api}
+      EPORTAL_URL: ${EPORTAL_URL:-http://eportal.uika-bogor.ac.id}
+      SSO_CLIENT_ID: ${SSO_CLIENT_ID:-}
+      SSO_CLIENT_SECRET: ${SSO_CLIENT_SECRET:-}
+      SSO_APP_MODULE_ID: ${SSO_APP_MODULE_ID:-}
+      SESSION_SECRET: ${SESSION_SECRET:-olahpdf-secret-key-change-in-production}
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-12}
+    volumes:
+      - files:/data
+    ports:
+      - "${PORT:-3000}:3000"
+
+  worker:
+    build: ./worker
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://olahpdf:${POSTGRES_PASSWORD:-ganti-password-ini}@db:5432/olahpdf
+      STORAGE_DIR: /data
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+      JOB_TIMEOUT: ${JOB_TIMEOUT:-300}
+      RESULT_TTL_MINUTES: ${RESULT_TTL_MINUTES:-60}
+      HTML_URL_ENABLED: ${HTML_URL_ENABLED:-1}
+      HTML_ALLOW_PRIVATE: ${HTML_ALLOW_PRIVATE:-0}
+    volumes:
+      - files:/data
+    shm_size: 512mb   # Chromium untuk HTML → PDF
+    stop_grace_period: 5m
+
+volumes:
+  pgdata:
+  files:

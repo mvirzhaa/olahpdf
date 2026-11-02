@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OlahPDF — konversi, gabung, kompres & edit PDF</title>
+  <meta name="description" content="Aplikasi web pengolah PDF: konversi, gabung, pisah, kompres, watermark, unlock, dan edit PDF.">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Lewati ke konten</a>
+  <header class="topbar">
+    <a class="brand" href="#/" aria-label="OlahPDF — beranda">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M7 3h13l6 6v20H7z" fill="#fff" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M20 3v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="21" cy="22" r="6.5" fill="var(--stamp)" opacity=".9"/>
+        <path d="M18.2 22.2l2 2 3.8-4.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>OlahPDF</span>
+    </a>
+    <nav class="topnav" aria-label="Navigasi utama">
+      <a href="#/">Semua alat</a>
+      <a href="#/tool/merge">Gabung</a>
+      <a href="#/tool/compress">Kompres</a>
+      <a class="topnav-edit" href="#/tool/edit">Edit PDF</a>
+    </nav>
+    <div class="user-menu" id="user-menu" hidden>
+      <span class="user-chip" id="user-chip" title="Akun E-Portal">
+        <span class="user-name" id="user-name">Pengguna</span>
+      </span>
+      <a class="btn-portal" id="btn-portal" href="#" title="Kembali ke E-Portal UIKA">E-Portal</a>
+      <button class="btn-logout" id="btn-logout" type="button" title="Keluar">Keluar</button>
+    </div>
+  </header>
+  <main id="main" tabindex="-1"></main>
+  <footer class="foot">
+    <p>File Anda diproses di server ini dan dihapus otomatis setelah <span data-ttl>60</span> menit. Tidak ada salinan yang dikirim ke pihak lain.</p>
+  </footer>
+  <div class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
