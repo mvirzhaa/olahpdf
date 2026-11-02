@@ -80,3 +80,4 @@ echo "  Aplikasi berjalan di: https://$DOMAIN"
 echo "  Cek status kontainer: docker compose ps"
 echo "  Cek log aplikasi    : docker compose logs -f"
 echo "======================================================"
+

@@ -25,3 +25,4 @@ scp -P $ServerPort -r `
 Write-Host "Upload selesai! Silakan login ke server:" -ForegroundColor Green
 Write-Host "ssh -p $ServerPort $ServerUser@$ServerHost" -ForegroundColor Yellow
 Write-Host "cd $RemoteDir && bash deploy/setup-server.sh" -ForegroundColor Yellow
+
