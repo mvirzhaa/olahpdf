@@ -398,7 +398,9 @@ export function ssoMiddleware(req, res, next) {
         res.setHeader('Set-Cookie', cookieOptions.join('; '));
 
         // Bersihkan token dari URL di address bar
-        const cleanUrl = req.path || '/';
+        // Selalu arahkan ke basePath (/pdf/) agar tidak terlempar ke root (/)
+        const basePath = (process.env.BASE_PATH || '/pdf').replace(/\/+$/, '');
+        const cleanUrl = (req.path && req.path !== '/') ? `${basePath}${req.path}` : `${basePath}/`;
         return res.redirect(cleanUrl);
       })
       .catch((err) => {
