@@ -1,5 +1,5 @@
 import {
-  ICONS, badge, escapeHtml, formatBytes, h, openPdf, progressView, renderThumb, resultView, toast, uploadJob, waitJob,
+  ICONS, badge, escapeHtml, formatBytes, h, openPdf, progressView, renderThumb, resultView, toast, uploadJob, waitJob, urlPath,
 } from './ui.js';
 
 const main = document.getElementById('main');
@@ -21,7 +21,7 @@ const extOf = (name) => (name.match(/\.[^.]+$/)?.[0] || '').toLowerCase();
 
 async function catalog() {
   if (!state.catalog) {
-    const res = await fetch('/api/tools');
+    const res = await fetch(urlPath('/api/tools'));
     if (!res.ok) throw new Error('Tidak dapat memuat daftar alat.');
     state.catalog = await res.json();
     document.querySelectorAll('[data-ttl]').forEach((e) => { e.textContent = state.catalog.limits.resultTtlMinutes; });
@@ -425,7 +425,7 @@ async function route() {
 }
 async function initAuth() {
   try {
-    const res = await fetch('/api/auth/me');
+    const res = await fetch(urlPath('/api/auth/me'));
     if (!res.ok) return;
     const data = await res.json();
     if (data.authenticated && data.user) {
@@ -447,7 +447,7 @@ async function initAuth() {
         if (logoutBtn) {
           logoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            window.location.href = '/logout';
+            window.location.href = urlPath('/logout');
           });
         }
         menu.hidden = false;

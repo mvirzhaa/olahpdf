@@ -80,11 +80,14 @@ export function toast(msg, ms = 3500) {
   toastTimer = setTimeout(() => { el.hidden = true; }, ms);
 }
 
+export const BASE_PATH = (document.querySelector('base')?.getAttribute('href') || '/').replace(/\/+$/, '');
+export const urlPath = (p) => `${BASE_PATH}${p.startsWith('/') ? p : '/' + p}`;
+
 /** Unggah FormData dengan progres. Mengembalikan {id}. */
 export function uploadJob(toolId, formData, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', `/api/jobs/${encodeURIComponent(toolId)}`);
+    xhr.open('POST', urlPath(`/api/jobs/${encodeURIComponent(toolId)}`));
     xhr.responseType = 'json';
     xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress?.(e.loaded / e.total); };
     xhr.onload = () => {
@@ -102,7 +105,7 @@ export async function waitJob(id, onUpdate, signal) {
   let delay = 600;
   for (;;) {
     if (signal?.aborted) throw new Error('Dibatalkan.');
-    const res = await fetch(`/api/jobs/${id}`, { cache: 'no-store' });
+    const res = await fetch(urlPath(`/api/jobs/${id}`), { cache: 'no-store' });
     const job = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(job.error || 'Gagal memeriksa status.');
     onUpdate?.(job);
@@ -167,7 +170,7 @@ export function resultView(tool, job, { onAgain, onDeleted } = {}) {
   el.querySelector('[data-again]').addEventListener('click', () => onAgain?.());
   el.querySelector('[data-del]').addEventListener('click', async (e) => {
     e.currentTarget.disabled = true;
-    const r = await fetch(`/api/jobs/${job.id}`, { method: 'DELETE' });
+    const r = await fetch(urlPath(`/api/jobs/${job.id}`), { method: 'DELETE' });
     if (r.ok) {
       toast('File sudah dihapus dari server.');
       el.querySelectorAll('a.btn').forEach((a) => { a.removeAttribute('href'); a.classList.add('btn-disabled'); a.setAttribute('aria-disabled', 'true'); });
@@ -183,8 +186,8 @@ export function resultView(tool, job, { onAgain, onDeleted } = {}) {
 // pdf.js dimuat hanya saat dibutuhkan (thumbnail & editor)
 let pdfjsPromise;
 export function loadPdfjs() {
-  pdfjsPromise ||= import('/vendor/pdfjs/build/pdf.min.mjs').then((lib) => {
-    lib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/build/pdf.worker.min.mjs';
+  pdfjsPromise ||= import(urlPath('/vendor/pdfjs/build/pdf.min.mjs')).then((lib) => {
+    lib.GlobalWorkerOptions.workerSrc = urlPath('/vendor/pdfjs/build/pdf.worker.min.mjs');
     return lib;
   });
   return pdfjsPromise;
@@ -196,11 +199,11 @@ export async function openPdf(file, password) {
   const task = lib.getDocument({
     data,
     password,
-    cMapUrl: '/vendor/pdfjs/cmaps/',
+    cMapUrl: urlPath('/vendor/pdfjs/cmaps/'),
     cMapPacked: true,
-    standardFontDataUrl: '/vendor/pdfjs/standard_fonts/',
-    wasmUrl: '/vendor/pdfjs/wasm/',
-    iccUrl: '/vendor/pdfjs/iccs/',
+    standardFontDataUrl: urlPath('/vendor/pdfjs/standard_fonts/'),
+    wasmUrl: urlPath('/vendor/pdfjs/wasm/'),
+    iccUrl: urlPath('/vendor/pdfjs/iccs/'),
   });
   return task.promise;
 }
