@@ -47,8 +47,7 @@ services:
       SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-12}
       NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-0}
     extra_hosts:
-      - "${SSO_HOST_MAP:-eportal.uika-bogor.ac.id:172.16.18.141}"
-      - "eportal.uika-bogor.ac.id:172.16.18.141"
+      eportal.uika-bogor.ac.id: "172.16.18.141"
     volumes:
       - files:/data
     ports:
@@ -61,8 +60,7 @@ services:
       db:
         condition: service_healthy
     extra_hosts:
-      - "${SSO_HOST_MAP:-eportal.uika-bogor.ac.id:172.16.18.141}"
-      - "eportal.uika-bogor.ac.id:172.16.18.141"
+      eportal.uika-bogor.ac.id: "172.16.18.141"
     environment:
       DATABASE_URL: postgresql://olahpdf:${POSTGRES_PASSWORD:-ganti-password-ini}@db:5432/olahpdf
       STORAGE_DIR: /data
