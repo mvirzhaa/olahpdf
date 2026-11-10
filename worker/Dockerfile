@@ -9,6 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-draw \
         ghostscript \
+        libatomic1 \
         fonts-dejavu-core fonts-liberation2 fonts-crosextra-carlito fonts-crosextra-caladea \
         fonts-noto-core fonts-noto-ui-core \
     && rm -rf /var/lib/apt/lists/*
